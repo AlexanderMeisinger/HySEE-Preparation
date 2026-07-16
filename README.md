@@ -1,8 +1,6 @@
 # HySEE-Preparation
 HySEE - Hydrogen in Southeast Europe
 
-This repository contains the 
-
 ## Project description
 HySEE identifies suitable areas for renewable hydrogen (H2) production in Bulgaria and Romania and support the establishment of a South-Eastern H2 Corridor that can supply Central Europe, including Germany. To achieve this, the project map renewable energy potential, production capacity, and current and future hydrogen demand.
 
