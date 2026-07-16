@@ -4,6 +4,8 @@ HySEE - Hydrogen in Southeast Europe
 ## Project description
 HySEE identifies suitable areas for renewable hydrogen (H2) production in Bulgaria and Romania and support the establishment of a South-Eastern H2 Corridor that can supply Central Europe, including Germany. To achieve this, the project map renewable energy potential, production capacity, and current and future hydrogen demand.
 
+The Atlas is inspired by the German Hydrogen Atlas: https://wasserstoffatlas.de.
+
 ## Installation and usage
 1. Open your terminal at a location where you want to install the repository HySEE including it's subworkflows PyPSA-Earth. Type the following in your terminal to download the packages and the dependencies (pypsa-earth) from GitHub. Note that the tag `--recursive-submodules` is needed to automatically clone also the pypsa-eur and pypsa-earth dependencies.
    
