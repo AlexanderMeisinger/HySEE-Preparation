@@ -8,6 +8,12 @@ The Atlas is inspired by the German Hydrogen Atlas: https://wasserstoffatlas.de.
 
 <img width="1201" height="1122" alt="HySEE-5" src="https://github.com/user-attachments/assets/a347192b-3324-481d-86f3-7872c13961da" />
 
+## Respository structure
+- `config`: contains configuration files for PyPSA-Earth (Bulgaria, Romania). These configurations are adjusted according to the year (2030) and the scenario settings.
+- `workflow/envs:` contains the environment used for PyPSA-Earth.
+- `workflow/notebooks:` contains the Jupyter notebooks and Python files used for the evaluation of results
+- `workflow/pypsa-earth:` contains the PyPSA-Earth branch used for this calculations.
+
 ## Installation and usage
 1. Open your terminal at a location where you want to install the repository HySEE including it's subworkflows PyPSA-Earth. Type the following in your terminal to download the packages and the dependencies (pypsa-earth) from GitHub. Note that the tag `--recursive-submodules` is needed to automatically clone also the pypsa-eur and pypsa-earth dependencies.
    
@@ -15,19 +21,19 @@ The Atlas is inspired by the German Hydrogen Atlas: https://wasserstoffatlas.de.
    git clone --recurse-submodules https://github.com/AlexanderMeisinger/HySEE-Preparation.git
    ```
    
-3. Move the current directory to the head of the repository.
+2. Move the current directory to the head of the repository.
    
    ```bash
    .../some/path/without/spaces % cd HySEE-Preparation
    ```
    
-4. The PyPSA-Earth python package requirements are curated in the `workflow/pypsa-earth/envs/environment.yaml` of the PyPSA-Earth respository. The environment can be installed using conda or mamba:
+3. The PyPSA-Earth python package requirements are curated in the `workflow/pypsa-earth/envs/environment.yaml` of the PyPSA-Earth respository. The environment can be installed using conda or mamba:
    
    ```bash
    .../HySEE-Preparation % conda env create -f workflow/pypsa-earth/envs/environment.yaml
    ```
    
-5. For running the optimisation one has to install the solver. We can recommend the open source `HiGHs` solver, see more details on solvers in the documentation of [PyPSA-Earth](https://pypsa-earth.readthedocs.io/en/latest/index.html). The optimisation in this work was performed using the commercial `Gurobi` solver.
+4. For running the optimisation one has to install the solver. We can recommend the open source `HiGHs` solver, see more details on solvers in the documentation of [PyPSA-Earth](https://pypsa-earth.readthedocs.io/en/latest/index.html). The optimisation in this work was performed using the commercial `Gurobi` solver.
 
 ## Run scenarios
 For starting the PyPSA-Earth model, run the following command:
