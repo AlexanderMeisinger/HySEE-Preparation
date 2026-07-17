@@ -6,6 +6,8 @@ HySEE identifies suitable areas for renewable hydrogen (H2) production in Bulgar
 
 The Atlas is inspired by the German Hydrogen Atlas: https://wasserstoffatlas.de.
 
+<img width="1201" height="1122" alt="HySEE-5" src="https://github.com/user-attachments/assets/a347192b-3324-481d-86f3-7872c13961da" />
+
 ## Installation and usage
 1. Open your terminal at a location where you want to install the repository HySEE including it's subworkflows PyPSA-Earth. Type the following in your terminal to download the packages and the dependencies (pypsa-earth) from GitHub. Note that the tag `--recursive-submodules` is needed to automatically clone also the pypsa-eur and pypsa-earth dependencies.
    
