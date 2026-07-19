@@ -3,13 +3,5 @@ workflow/data/
 workflow/figures/
 workflow/tables/
 
-# Temporary files
-#tmp/
-#cache/
-#logs/
-
-# Snakemake
-#.snakemake/
-
-# Jupyter
-#.ipynb_checkpoints/
+# IDEs
+.vscode/
