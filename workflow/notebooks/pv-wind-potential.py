@@ -27,16 +27,16 @@ from shapely.geometry import shape
 
 
 # PATHS AND FILE NAMES
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DATA_ROOT = REPO_ROOT / "data"
-FIGURES_ROOT = REPO_ROOT / "figures"
-TABLES_ROOT = REPO_ROOT / "tables"
-
 show_duration_curves = False
 
 # Adjust the pattern if needed to match the actual result network file name in your project.
-RESULT_NETWORK_FILE_PATTERN = "elec_s_10_ec_lcopt_Co2L-*.nc"
+country = "Romania" # Bulgaria, Romania
+project_dir = Path(f"/mnt/e/HySEE/{country}/pypsa-earth")
+figure_dir = Path(f"/mnt/e/HySEE/HySEE-Preparation/workflow/figures/{country}")
+table_dir = Path(f"/mnt/e/HySEE/HySEE-Preparation/workflow/tables/{country}")
+
+scenario = "1h-sec"
+RESULT_NETWORK_FILE_PATTERN = "elec_s_10_ec_lcopt_Co2L0.45-1h_1h_2030_0.07_AB_0export.nc"
 
 VOLTAGE_COLORS = {
     110000: "#4c78a8",
@@ -1020,60 +1020,51 @@ def main() -> None:
     Returns:
         None.
     """
-    # Stop immediately when the expected data root is missing.
-    if not DATA_ROOT.exists():
-        raise FileNotFoundError(f"Data root does not exist: {DATA_ROOT}")
+    if not project_dir.exists():
+        raise FileNotFoundError(project_dir)
 
-    # Walk through every country folder inside data.
-    for project_dir in sorted(DATA_ROOT.iterdir()):
-        if not project_dir.is_dir():
-            continue
+    resources_dir = project_dir / "resources" / scenario
+    network_dir = project_dir / "results" / scenario / "postnetworks"
 
-        resources_dir = project_dir / "resources"
-        network_dir = project_dir / "results" / "networks"
-        matching_network_files = sorted(network_dir.glob(RESULT_NETWORK_FILE_PATTERN))
+    matching_network_files = sorted(network_dir.glob(RESULT_NETWORK_FILE_PATTERN))
 
-        # Skip folders that do not have the expected model inputs.
-        if not resources_dir.exists():
-            continue
-        if not matching_network_files:
-            continue
+    if not resources_dir.exists():
+        raise FileNotFoundError(resources_dir)
 
-        # Refuse ambiguous projects that contain multiple matching network files.
-        if len(matching_network_files) > 1:
-            raise ValueError(
-                f"Expected exactly one result network in {network_dir}, found {len(matching_network_files)}."
-            )
-
-        result_network_file = matching_network_files[0]
-        figure_dir = FIGURES_ROOT / project_dir.name
-
-        # Build one explicit path object for the current country.
-        project_paths = ProjectPaths(
-            country_name=project_dir.name,
-            base_network_dir=resources_dir / "base_network",
-            country_shape_file=resources_dir / "shapes" / "country_shapes.geojson",
-            result_network_file=result_network_file,
-            solar_profile_file=resources_dir / "renewable_profiles" / "profile_solar.nc",
-            wind_profile_file=resources_dir / "renewable_profiles" / "profile_onwind.nc",
-            profile_busmap_file=resources_dir / "bus_regions" / "busmap_elec_s.csv",
-            profile_regions_file=resources_dir / "bus_regions" / "regions_onshore_elec_s.geojson",
-            figure_dir=figure_dir,
-            base_network_output_file=figure_dir / "base_network_overview.png",
-            result_network_output_file=figure_dir / "result_network_overview.png",
-            result_network_labeled_output_file=figure_dir / "result_network_overview_labeled.png",
-            solar_potential_output_file=figure_dir / "solar_potential_with_profiles.png",
-            wind_potential_output_file=figure_dir / "wind_potential_with_profiles.png",
-            solar_potential_median_output_file=figure_dir / "solar_potential_median_overview.png",
-            wind_potential_median_output_file=figure_dir / "wind_potential_median_overview.png",
+    if len(matching_network_files) != 1:
+        raise ValueError(
+            f"Expected exactly one result network in {network_dir}, "
+            f"found {len(matching_network_files)}."
         )
 
-        # Run all exports for the current country.
-        plot_wind_and_pv_potential(project_paths)
-        plot_wind_and_pv_potential_median_overview(project_paths)
+    result_network_file = matching_network_files[0]
 
-        # Print the output folder so the finished run is easy to verify.
-        print(project_paths.figure_dir)
+    # Build one explicit path object for the current country.
+    project_paths = ProjectPaths(
+        country_name=project_dir.parent.name,
+        base_network_dir=resources_dir / "base_network",
+        country_shape_file=resources_dir / "shapes" / "country_shapes.geojson",
+        result_network_file=result_network_file,
+        solar_profile_file=resources_dir / "renewable_profiles" / "profile_solar.nc",
+        wind_profile_file=resources_dir / "renewable_profiles" / "profile_onwind.nc",
+        profile_busmap_file=resources_dir / "bus_regions" / "busmap_elec_s.csv",
+        profile_regions_file=resources_dir / "bus_regions" / "regions_onshore_elec_s.geojson",
+        figure_dir=figure_dir,
+        base_network_output_file=figure_dir / "base_network_overview.png",
+        result_network_output_file=figure_dir / "result_network_overview.png",
+        result_network_labeled_output_file=figure_dir / "result_network_overview_labeled.png",
+        solar_potential_output_file=figure_dir / "solar_potential_with_profiles.png",
+        wind_potential_output_file=figure_dir / "wind_potential_with_profiles.png",
+        solar_potential_median_output_file=figure_dir / "solar_potential_median_overview.png",
+        wind_potential_median_output_file=figure_dir / "wind_potential_median_overview.png",
+    )
+
+    # Run all exports for the current country.
+    plot_wind_and_pv_potential(project_paths)
+    plot_wind_and_pv_potential_median_overview(project_paths)
+
+    # Print the output folder so the finished run is easy to verify.
+    print(f"Finished: {figure_dir}")
 
 
 if __name__ == "__main__":
