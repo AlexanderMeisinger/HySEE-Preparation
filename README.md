@@ -15,7 +15,7 @@ The Atlas is inspired by the German Hydrogen Atlas: https://wasserstoffatlas.de.
 - `workflow/pypsa-earth:` contains the PyPSA-Earth branch used for this calculations.
 
 ## Installation and usage
-1. Open your terminal at a location where you want to install the repository HySEE including it's subworkflows PyPSA-Earth. Type the following in your terminal to download the packages and the dependencies (pypsa-earth) from GitHub. Note that the tag `--recursive-submodules` is needed to automatically clone also the pypsa-eur and pypsa-earth dependencies.
+1. Open your terminal at a location where you want to install the repository HySEE including it's subworkflows PyPSA-Earth. Type the following in your terminal to download the packages and the dependencies (pypsa-earth) from GitHub. Note that the tag `--recursive-submodules` is needed to automatically clone the pypsa-earth dependencies.
    
    ```bash
    git clone --recurse-submodules https://github.com/AlexanderMeisinger/HySEE-Preparation.git
@@ -27,10 +27,10 @@ The Atlas is inspired by the German Hydrogen Atlas: https://wasserstoffatlas.de.
    .../some/path/without/spaces % cd HySEE-Preparation
    ```
    
-3. The PyPSA-Earth python package requirements are curated in the `workflow/pypsa-earth/envs/environment.yaml` of the PyPSA-Earth respository. The environment can be installed using conda or mamba:
+3. The PyPSA-Earth python package requirements are curated in the `workflow/envs/environment.yml` of the PyPSA-Earth respository. The environment can be installed using conda or mamba:
    
    ```bash
-   .../HySEE-Preparation % conda env create -f workflow/pypsa-earth/envs/environment.yaml
+   .../HySEE-Preparation % conda env create -f workflow/envs/environment.yml
    ```
    
 4. For running the optimisation one has to install the solver. We can recommend the open source `HiGHs` solver, see more details on solvers in the documentation of [PyPSA-Earth](https://pypsa-earth.readthedocs.io/en/latest/index.html). The optimisation in this work was performed using the commercial `Gurobi` solver.
@@ -56,6 +56,9 @@ The project results and analysis can be reproduced using the notebooks in `workf
 
 ## Result and input data
 A dataset of the model results will be available on Zenodo under a CC-BY-4.0 license. Please refer to the documentation of [PyPSA-Earth](https://pypsa-earth.readthedocs.io/en/latest/index.html) for details on the input data.
+
+## Acknowledgement
+We gratefully acknowledge funding from the HySEE - Hydrogen in Southeast Europe project by the European Climate Initiative (EUKI) and the German Federal Ministry for the Environment, Climate Action, Nature Conservation and Nuclear Safety.
 
 ## License
 The code in this repo is MIT licensed, see ./LICENSE.md.
