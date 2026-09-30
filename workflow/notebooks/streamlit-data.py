@@ -3,6 +3,14 @@
 # Project: H2Global meets Africa (FENES, OTH Regensburg)
 # Base: https://doi.org/10.1016/j.joule.2023.06.016 and https://github.com/PyPSA/pypsa-eur
 
+# Spatial preprocessing runs independently of the legacy Europe/Germany settings.
+# Usage: python streamlit-data.py --spatial --project-dir /path/to/Bulgaria/pypsa-earth
+import sys
+if __name__ == "__main__" and "--spatial" in sys.argv:
+    from spatial_data import main as prepare_spatial
+    prepare_spatial([arg for arg in sys.argv[1:] if arg != "--spatial"])
+    raise SystemExit(0)
+
 # Package imports
 import os
 import re
@@ -73,7 +81,7 @@ def capacity(scenarios, country):
             df_cap_annual = pd.concat([n.statistics.optimal_capacity(groupby=["carrier", "country"])])
             idx = pd.IndexSlice
             df_cap_annual = df_cap_annual.loc[idx[:,:,country]]
-            
+
             df_cap_annual = df_cap_annual.reorder_levels(['component', 'carrier'])
             df_cap_annual = df_cap_annual.sort_index()
 
@@ -145,16 +153,16 @@ def energy_balances(scenarios, sector, country):
         # Extract and sort results from nc file
         if country == "EU":
             df_annual = n.statistics.energy_balance()
-        else:           
+        else:
             df_annual = n.statistics.energy_balance(groupby=["carrier", "bus_carrier", "country"])
             idx = pd.IndexSlice
             df_annual = df_annual.loc[idx[:,:,:,country]]
-            
+
             # Add Non spatial EU supply
-            # Get EU results structure and define missing country-specific carriers 
+            # Get EU results structure and define missing country-specific carriers
             df_annual_eu = n.statistics.energy_balance()
             carriers_to_add = ["oil", "coal", "lignite", "methanol", "oil primary", "uranium"]
-            
+
             # Filter df_annual_eu for those bus_carriers
             df_filtered = df_annual_eu[df_annual_eu.index.get_level_values('bus_carrier').isin(carriers_to_add)]
             df_filtered[:] = 0.0
@@ -164,47 +172,47 @@ def energy_balances(scenarios, sector, country):
             df_annual = df_annual.reorder_levels(['bus_carrier', 'component', 'carrier'])
 
             # Conversion for regional oil consideration
-            df_annual.loc[("oil", "Link", "Fischer-Tropsch")] = df_annual.loc[("Hydrogen Storage", "Link", "Fischer-Tropsch")]*(-1)*0.8 if ("Hydrogen Storage", "Link", "Fischer-Tropsch") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "agriculture machinery oil")] = df_annual.loc[("agriculture machinery oil", "Link", "agriculture machinery oil")]*(-1) if ("agriculture machinery oil", "Link", "agriculture machinery oil") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "kerosene for aviation")] = df_annual.loc[("kerosene for aviation", "Link", "kerosene for aviation")]*(-1) if ("kerosene for aviation", "Link", "kerosene for aviation") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "land transport oil")] = df_annual.loc[("land transport oil", "Link", "land transport oil")]*(-1) if ("land transport oil", "Link", "land transport oil") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "oil")] = df_annual.loc[("naphtha for industry", "Link", "naphtha for industry")]*(-1) if ("naphtha for industry", "Link", "naphtha for industry") in df_annual.index else 0 
+            df_annual.loc[("oil", "Link", "Fischer-Tropsch")] = df_annual.loc[("Hydrogen Storage", "Link", "Fischer-Tropsch")]*(-1)*0.8 if ("Hydrogen Storage", "Link", "Fischer-Tropsch") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "agriculture machinery oil")] = df_annual.loc[("agriculture machinery oil", "Link", "agriculture machinery oil")]*(-1) if ("agriculture machinery oil", "Link", "agriculture machinery oil") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "kerosene for aviation")] = df_annual.loc[("kerosene for aviation", "Link", "kerosene for aviation")]*(-1) if ("kerosene for aviation", "Link", "kerosene for aviation") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "land transport oil")] = df_annual.loc[("land transport oil", "Link", "land transport oil")]*(-1) if ("land transport oil", "Link", "land transport oil") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "oil")] = df_annual.loc[("naphtha for industry", "Link", "naphtha for industry")]*(-1) if ("naphtha for industry", "Link", "naphtha for industry") in df_annual.index else 0
             df_annual.loc[("oil", "Link", "naphtha for industry")] = df_annual.loc[("AC", "Link", "oil")]*(-1)/0.35 if ("AC", "Link", "oil") in df_annual.index else 0
-            df_annual.loc[("oil", "Link", "residential urban decentral oil boiler")] = df_annual.loc[("residential urban decentral heat", "Link", "residential urban decentral oil boiler")]*(-1)/0.79 if ("residential urban decentral heat", "Link", "residential urban decentral oil boiler") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "rural oil boiler")] = (df_annual.loc[("rural heat", "Link", "rural oil boiler")]*(-1)/0.82) if ("rural heat", "Link", "rural oil boiler") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "services rural oil boiler")] = df_annual.loc[("residential rural heat", "Link", "services rural oil boiler")]*(-1)/0.79 if ("residential rural heat", "Link", "services rural oil boiler") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "shipping oil")] = df_annual.loc[("shipping oil", "Link", "shipping oil")]*(-1) if ("shipping oil", "Link", "shipping oil") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "unsustainable bioliquids")] = df_annual.loc[("unsustainable bioliquids", "Link", "unsustainable bioliquids")]*(-1) if ("unsustainable bioliquids", "Link", "unsustainable bioliquids") in df_annual.index else 0 
-            df_annual.loc[("oil", "Link", "urban decentral oil boiler")] = df_annual.loc[("urban decentral heat", "Link", "urban decentral oil boiler")]*(-1)/0.8 if ("urban decentral heat", "Link", "urban decentral oil boiler") in df_annual.index else 0 
-            
-            df_annual.loc[("oil", "Link", "oil refining")] = df_annual[df_annual.index.get_level_values('bus_carrier') == 'oil'].sum()*(-1) 
-            
-            df_annual.loc[("oil primary", "Generator", "oil primary")] = df_annual.loc[("oil", "Link", "oil refining")]/0.95 if ("oil", "Link", "oil refining") in df_annual.index else 0 
-            df_annual.loc[("oil primary", "Link", "oil refining")] = df_annual.loc[("oil primary", "Generator", "oil primary")]*(-1) 
-            
+            df_annual.loc[("oil", "Link", "residential urban decentral oil boiler")] = df_annual.loc[("residential urban decentral heat", "Link", "residential urban decentral oil boiler")]*(-1)/0.79 if ("residential urban decentral heat", "Link", "residential urban decentral oil boiler") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "rural oil boiler")] = (df_annual.loc[("rural heat", "Link", "rural oil boiler")]*(-1)/0.82) if ("rural heat", "Link", "rural oil boiler") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "services rural oil boiler")] = df_annual.loc[("residential rural heat", "Link", "services rural oil boiler")]*(-1)/0.79 if ("residential rural heat", "Link", "services rural oil boiler") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "shipping oil")] = df_annual.loc[("shipping oil", "Link", "shipping oil")]*(-1) if ("shipping oil", "Link", "shipping oil") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "unsustainable bioliquids")] = df_annual.loc[("unsustainable bioliquids", "Link", "unsustainable bioliquids")]*(-1) if ("unsustainable bioliquids", "Link", "unsustainable bioliquids") in df_annual.index else 0
+            df_annual.loc[("oil", "Link", "urban decentral oil boiler")] = df_annual.loc[("urban decentral heat", "Link", "urban decentral oil boiler")]*(-1)/0.8 if ("urban decentral heat", "Link", "urban decentral oil boiler") in df_annual.index else 0
+
+            df_annual.loc[("oil", "Link", "oil refining")] = df_annual[df_annual.index.get_level_values('bus_carrier') == 'oil'].sum()*(-1)
+
+            df_annual.loc[("oil primary", "Generator", "oil primary")] = df_annual.loc[("oil", "Link", "oil refining")]/0.95 if ("oil", "Link", "oil refining") in df_annual.index else 0
+            df_annual.loc[("oil primary", "Link", "oil refining")] = df_annual.loc[("oil primary", "Generator", "oil primary")]*(-1)
+
             # Conversion for regional coal consideration
-            df_annual.loc[("coal", "Link", "coal")] = df_annual.loc[("AC", "Link", "coal")]*(-1)/0.33 if ("AC", "Link", "coal") in df_annual.index else 0 
-            df_annual.loc[("coal", "Link", "coal for industry")] = df_annual.loc[("coal for industry", "Link", "coal for industry")]*(-1) if ("coal for industry", "Link", "coal for industry") in df_annual.index else 0 
-            df_annual.loc[("coal", "Generator", "coal")] = (df_annual.loc[("coal", "Link", "coal")]+df_annual.loc[("coal", "Link", "coal for industry")])*(-1) 
+            df_annual.loc[("coal", "Link", "coal")] = df_annual.loc[("AC", "Link", "coal")]*(-1)/0.33 if ("AC", "Link", "coal") in df_annual.index else 0
+            df_annual.loc[("coal", "Link", "coal for industry")] = df_annual.loc[("coal for industry", "Link", "coal for industry")]*(-1) if ("coal for industry", "Link", "coal for industry") in df_annual.index else 0
+            df_annual.loc[("coal", "Generator", "coal")] = (df_annual.loc[("coal", "Link", "coal")]+df_annual.loc[("coal", "Link", "coal for industry")])*(-1)
 
             # Conversion for regional lignite consideration
-            df_annual.loc[("lignite", "Link", "lignite")] = df_annual.loc[("AC", "Link", "lignite")]*(-1)/0.33 if ("AC", "Link", "lignite") in df_annual.index else 0 
+            df_annual.loc[("lignite", "Link", "lignite")] = df_annual.loc[("AC", "Link", "lignite")]*(-1)/0.33 if ("AC", "Link", "lignite") in df_annual.index else 0
             df_annual.loc[("lignite", "Generator", "lignite")] = df_annual.loc[("lignite", "Link", "lignite")]*(-1)
 
             # Conversion for regional methanol consideration
-            df_annual.loc[("methanol", "Link", "CCGT methanol")] = df_annual.loc[("AC", "Link", "CCGT methanol")]*(-1)/0.57 if ("AC", "Link", "CCGT methanol") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "CCGT methanol CC")] = df_annual.loc[("AC", "Link", "CCGT methanol CC")]*(-1)/0.57 if ("AC", "Link", "CCGT methanol CC") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "Methanol steam reforming")] = df_annual.loc[("Hydrogen Storage", "Link", "Methanol steam reforming")]*(-1)/0.83 if ("Hydrogen Storage", "Link", "Methanol steam reforming") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "Methanol steam reforming CC")] = df_annual.loc[("Hydrogen Storage", "Link", "Methanol steam reforming CC")]*(-1)/0.83 if ("Hydrogen Storage", "Link", "Methanol steam reforming CC") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "OCGT methanol")] = df_annual.loc[("AC", "Link", "OCGT methanol")]*(-1)/0.41 if ("AC", "Link", "OCGT methanol") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "industry methanol")] = df_annual.loc[("industry methanol", "Link", "industry methanol")]*(-1) if ("industry methanol", "Link", "industry methanol") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "methanol-to-kerosene")] = df_annual.loc[("kerosene for aviation", "Link", "methanol-to-kerosene")]*(-1)*1.08 if ("kerosene for aviation", "Link", "methanol-to-kerosene") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "methanolisation")] = df_annual.loc[("Hydrogen Storage", "Link", "methanolisation")]*(-1)/0.88 if ("Hydrogen Storage", "Link", "methanolisation") in df_annual.index else 0 
-            df_annual.loc[("methanol", "Link", "shipping methanol")] = df_annual.loc[("shipping methanol", "Link", "shipping methanol")]*(-1) if ("shipping methanol", "Link", "shipping methanol") in df_annual.index else 0 
-            
+            df_annual.loc[("methanol", "Link", "CCGT methanol")] = df_annual.loc[("AC", "Link", "CCGT methanol")]*(-1)/0.57 if ("AC", "Link", "CCGT methanol") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "CCGT methanol CC")] = df_annual.loc[("AC", "Link", "CCGT methanol CC")]*(-1)/0.57 if ("AC", "Link", "CCGT methanol CC") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "Methanol steam reforming")] = df_annual.loc[("Hydrogen Storage", "Link", "Methanol steam reforming")]*(-1)/0.83 if ("Hydrogen Storage", "Link", "Methanol steam reforming") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "Methanol steam reforming CC")] = df_annual.loc[("Hydrogen Storage", "Link", "Methanol steam reforming CC")]*(-1)/0.83 if ("Hydrogen Storage", "Link", "Methanol steam reforming CC") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "OCGT methanol")] = df_annual.loc[("AC", "Link", "OCGT methanol")]*(-1)/0.41 if ("AC", "Link", "OCGT methanol") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "industry methanol")] = df_annual.loc[("industry methanol", "Link", "industry methanol")]*(-1) if ("industry methanol", "Link", "industry methanol") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "methanol-to-kerosene")] = df_annual.loc[("kerosene for aviation", "Link", "methanol-to-kerosene")]*(-1)*1.08 if ("kerosene for aviation", "Link", "methanol-to-kerosene") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "methanolisation")] = df_annual.loc[("Hydrogen Storage", "Link", "methanolisation")]*(-1)/0.88 if ("Hydrogen Storage", "Link", "methanolisation") in df_annual.index else 0
+            df_annual.loc[("methanol", "Link", "shipping methanol")] = df_annual.loc[("shipping methanol", "Link", "shipping methanol")]*(-1) if ("shipping methanol", "Link", "shipping methanol") in df_annual.index else 0
+
             # Conversion for regional nuclear consideration
             df_annual.loc[("uranium", "Link", "nuclear")] = df_annual.loc[("AC", "Link", "nuclear")]*(-1)/0.33 if ("AC", "Link", "nuclear") in df_annual.index else 0
-        
+
         # Final Sorting with converted parameters
         df_annual = df_annual.reorder_levels(['bus_carrier', 'component', 'carrier'])
         df_annual = df_annual.sort_index()
@@ -214,7 +222,7 @@ def energy_balances(scenarios, sector, country):
         energy_balance.loc[df_annual.index, label] = df_annual
     # Fill nan values
     energy_balance = energy_balance.fillna(0)
-    
+
     # Get sectors
     balances = {i.replace(" ", "_"): [i] for i in energy_balance.index.levels[0]}
     # Define sector energy
@@ -245,7 +253,7 @@ def energy_balances(scenarios, sector, country):
             # Drop non relevant scenario informations
             df = df.xs((config["scenario"]["clusters"][0], config["electricity"]["transmission_limit"], config["scenario"]["sector_opts"][0]), level=["cluster", "ll", "opt"], axis=1)
 
-    return df 
+    return df
 
 
 def costs(scenarios, country):
@@ -281,7 +289,7 @@ def costs(scenarios, country):
         for ll in [config["electricity"]["transmission_limit"]]
         for planning_horizon in config["scenario"]["planning_horizons"]
     }
-    
+
     # Set sceanrio settings in dataset
     columns = pd.MultiIndex.from_tuples(
         networks_dict.keys(),
@@ -331,88 +339,92 @@ def costs(scenarios, country):
     df = df / 1e9
     # Drop non relevant scenario informations
     df = df.xs((config["scenario"]["clusters"][0], config["electricity"]["transmission_limit"], config["scenario"]["sector_opts"][0]), level=["cluster", "ll", "opt"], axis=1)
-    
+
     return df
 
 
-# Settings
-# Set path for scenarios
-MAIN_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.main"
-LOWCARBON_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.lowcarbon"
-LOWH2COST_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.lowH2cost"
-GRIDFREEZE_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.gridfreeze"
-HIGHH2DEMAND_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.highH2demand"
-HIGHCARBON_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.highcarbon"
+def prepare_legacy_scenarios():
+    # Settings
+    # Set path for scenarios
+    MAIN_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.main"
+    LOWCARBON_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.lowcarbon"
+    LOWH2COST_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.lowH2cost"
+    GRIDFREEZE_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.gridfreeze"
+    HIGHH2DEMAND_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.highH2demand"
+    HIGHCARBON_SCENARIOS = "/home/alex-charly/AP3/pypsa-eur/results/myopic/config.highcarbon"
 
-# Config settings for scenario
-SCENARIOS = {
-    (0, 0, 0, 0, 0): (MAIN_SCENARIOS), 
-    (1, 0, 0, 0, 0): (LOWCARBON_SCENARIOS),
-    (0, 1, 0, 0, 0): (LOWH2COST_SCENARIOS),
-    (0, 0, 1, 0, 0): (GRIDFREEZE_SCENARIOS),
-    (0, 0, 0, 1, 0): (HIGHH2DEMAND_SCENARIOS),
-    (0, 0, 0, 0, 1): (HIGHCARBON_SCENARIOS),
-}
-NAMES = ["low_carbon", "low_h2cost", "grid_freeze", "high_h2demand", "high_carbon"]
-countries = ["DE", "EU"] # EU means all European countries
+    # Config settings for scenario
+    SCENARIOS = {
+        (0, 0, 0, 0, 0): (MAIN_SCENARIOS),
+        (1, 0, 0, 0, 0): (LOWCARBON_SCENARIOS),
+        (0, 1, 0, 0, 0): (LOWH2COST_SCENARIOS),
+        (0, 0, 1, 0, 0): (GRIDFREEZE_SCENARIOS),
+        (0, 0, 0, 1, 0): (HIGHH2DEMAND_SCENARIOS),
+        (0, 0, 0, 0, 1): (HIGHCARBON_SCENARIOS),
+    }
+    NAMES = ["low_carbon", "low_h2cost", "grid_freeze", "high_h2demand", "high_carbon"]
+    countries = ["DE", "EU"] # EU means all European countries
 
-for country in countries:
-    # Cost preparation
-    cost = pd.concat(
-        {k: costs(scenarios, country) for k, (scenarios) in SCENARIOS.items()},
-        names=NAMES,
-    )
-    cost.index.names = cost.index.names[:-1] + ["carrier"]
-    cost = cost.stack([0]).to_xarray()
-    cost.name = "costs"
-
-    # Energy balance preparation
-    energy = pd.concat(
-        {k: energy_balances(scenarios, "energy", country) for k, (scenarios) in SCENARIOS.items()},
-        names=NAMES,
-    )
-    energy.index.names = energy.index.names[:-1] + ["carrier"]
-    energy = energy.stack([0]).to_xarray()
-    energy.name = "energy"
-
-    # CO2 balance preparation
-    if country == "EU":
-        co2 = pd.concat(
-            {k: energy_balances(scenarios, "co2", country) for k, (scenarios) in SCENARIOS.items()},
+    for country in countries:
+        # Cost preparation
+        cost = pd.concat(
+            {k: costs(scenarios, country) for k, (scenarios) in SCENARIOS.items()},
             names=NAMES,
         )
-        co2.index.names = co2.index.names[:-1] + ["carrier"]
-        co2 = co2.stack([0]).to_xarray()
-        co2.name = "co2"
+        cost.index.names = cost.index.names[:-1] + ["carrier"]
+        cost = cost.stack([0]).to_xarray()
+        cost.name = "costs"
 
-    # H2 balance preparation
-    h2 = pd.concat(
-        {k: energy_balances(scenarios, "Hydrogen_Storage", country) for k, (scenarios) in SCENARIOS.items()},
-        names=NAMES,
-    )
-    h2.index.names = h2.index.names[:-1] + ["carrier"]
-    h2 = h2.stack([0]).to_xarray()
-    h2.name = "hydrogen"
-    
-    # Generation, storage and conversion capacity preparation
-    cap = pd.concat(
-        {
-            k: pd.concat(
-                capacity(scenarios, country),
-                keys=["generation", "conversion", "storage"],
+        # Energy balance preparation
+        energy = pd.concat(
+            {k: energy_balances(scenarios, "energy", country) for k, (scenarios) in SCENARIOS.items()},
+            names=NAMES,
+        )
+        energy.index.names = energy.index.names[:-1] + ["carrier"]
+        energy = energy.stack([0]).to_xarray()
+        energy.name = "energy"
+
+        # CO2 balance preparation
+        if country == "EU":
+            co2 = pd.concat(
+                {k: energy_balances(scenarios, "co2", country) for k, (scenarios) in SCENARIOS.items()},
+                names=NAMES,
             )
-            for k, (scenarios) in SCENARIOS.items()
-        },
-        names=NAMES,
-    )
-    cap.index.names = cap.index.names[:-2] + ["category", "carrier"]
-    cap = cap.stack([0]).unstack("category").to_xarray()
-    
-    # Merge and output all data
-    if country == "EU":
-        ds = xr.merge([cost, energy, co2, h2, cap]).round(2)
-    else:
-        ds = xr.merge([cost, energy, h2, cap]).round(2)
-    comp = dict(zlib=True, complevel=9)
-    encoding = {var: comp for var in ds.data_vars}
-    ds.to_netcdf(f"{country}_scenarios_streamlit.nc", encoding=encoding)
+            co2.index.names = co2.index.names[:-1] + ["carrier"]
+            co2 = co2.stack([0]).to_xarray()
+            co2.name = "co2"
+
+        # H2 balance preparation
+        h2 = pd.concat(
+            {k: energy_balances(scenarios, "Hydrogen_Storage", country) for k, (scenarios) in SCENARIOS.items()},
+            names=NAMES,
+        )
+        h2.index.names = h2.index.names[:-1] + ["carrier"]
+        h2 = h2.stack([0]).to_xarray()
+        h2.name = "hydrogen"
+
+        # Generation, storage and conversion capacity preparation
+        cap = pd.concat(
+            {
+                k: pd.concat(
+                    capacity(scenarios, country),
+                    keys=["generation", "conversion", "storage"],
+                )
+                for k, (scenarios) in SCENARIOS.items()
+            },
+            names=NAMES,
+        )
+        cap.index.names = cap.index.names[:-2] + ["category", "carrier"]
+        cap = cap.stack([0]).unstack("category").to_xarray()
+
+        # Merge and output all data
+        if country == "EU":
+            ds = xr.merge([cost, energy, co2, h2, cap]).round(2)
+        else:
+            ds = xr.merge([cost, energy, h2, cap]).round(2)
+        comp = dict(zlib=True, complevel=9)
+        encoding = {var: comp for var in ds.data_vars}
+        ds.to_netcdf(f"{country}_scenarios_streamlit.nc", encoding=encoding)
+
+if __name__ == "__main__":
+    prepare_legacy_scenarios()

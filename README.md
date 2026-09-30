@@ -54,6 +54,28 @@ Please follow the documentation of [PyPSA-Earth](https://pypsa-earth.readthedocs
 ## Reproducibility
 The project results and analysis can be reproduced using the notebooks in `workflow/notebooks` after successfully running the scenarios in `config`.
 
+## Prepare spatial data for Streamlit
+
+Run from the parent HySEE workspace in a PyPSA-Earth environment:
+
+```bash
+python HySEE-Preparation/workflow/notebooks/streamlit-data.py --spatial --project-dir Bulgaria/pypsa-earth --run 1h-sec
+```
+
+`streamlit-data.py --spatial` calls `workflow/notebooks/spatial_data.py`, which
+reads solved `results/<run>/postnetworks` and matching boundaries from
+`resources/<run>/bus_regions`. It writes compact regional metrics, network
+connections, boundaries and provenance to `HySEE-Streamlit/data/spatial`.
+Use `--network`, `--regions` and `--output-dir` to override individual inputs
+and the destination. The functions in `spatial_data.py` can also be imported
+from notebooks. Without `--spatial`, the previous Europe/Germany preparation
+remains available with its original scenario settings.
+
+Hydrogen output includes every electricity-to-H₂ conversion link and uses
+snapshot-weighted output-port flows. Regional production and export results
+are distinguished from renewable capacity potential. Units and definitions
+are stored with each metric in `report.nc`.
+
 ## Result and input data
 A dataset of the model results will be available on Zenodo under a CC-BY-4.0 license. Please refer to the documentation of [PyPSA-Earth](https://pypsa-earth.readthedocs.io/en/latest/index.html) for details on the input data.
 
